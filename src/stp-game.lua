@@ -168,6 +168,8 @@ function TileGrid:moveUp()
         self._blankTileY = y
     elseif self._toroidalGeometry then
         self:swap(x, y, x, self.rowCount)
+        y = self.rowCount
+        self._blankTileY = y
     end
 end
 _UP.move = TileGrid.moveUp
@@ -183,8 +185,44 @@ function TileGrid:moveDown()
         self._blankTileY = y
     elseif self._toroidalGeometry then
         self:swap(x, y, x, 1)
+        y = 1
+        self._blankTileY = 1
     end
 end
 _DOWN.move = TileGrid.moveDown
+
+function TileGrid:moveLeft()
+    local x, y = self._blankTileX, self._blankTileY
+    local onLeftEdge = x == 1 and true or false
+
+    if not onLeftEdge then
+        self:swap(x, y, x - 1, y)
+        x = x - 1
+
+        self._blankTileX = x
+    elseif self._toroidalGeometry then
+        self:swap(x, y, self.columnCount, y)
+        x = self.columnCount
+        self._blankTileX = x
+    end
+end
+_LEFT.move = TileGrid.moveLeft
+
+function TileGrid:moveRight()
+    local x, y = self._blankTileX, self._blankTileY
+    local onRightEdge = x == self.columnCount and true or false
+
+    if not onRightEdge then
+        self:swap(x, y, x + 1, y)
+        x = x + 1
+
+        self._blankTileX = x
+    elseif self._toroidalGeometry then
+        self:swap(x, y, 1, y)
+        x = 1
+        self._blankTileX = x
+    end
+end
+_RIGHT.move = TileGrid.moveRight
 
 return TileGrid
