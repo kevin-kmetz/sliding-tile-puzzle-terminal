@@ -2,7 +2,7 @@ local TileGrid = {display = function () return nil end}
 TileGrid._mt_TileGrid = {__index = TileGrid}
 
 -- displayStyle ::= '_ASCII' | '_BOXCHAR'
-function TileGrid.new(numberOfRows, numberOfColumns, displayStyle)
+function TileGrid.new(numberOfRows, numberOfColumns, displayStyle, toroidalGeometry)
     local newTileGrid = {rows =               {},
                          rowCount =           numberOfRows and numberOfRows or 4,
                          columnCount =        numberOfColumns and numberOfColumns or 4,
@@ -15,7 +15,10 @@ function TileGrid.new(numberOfRows, numberOfColumns, displayStyle)
                          _bcHeader =          '_UNINITIALIZED',
                          _bcRowSeparator =    '_UNINITIALIZED',
                          _bcFooter =          '_UNINITIALIZED',
-                         _formatter =         '_UNINITIALIZED'}
+                         _formatter =         '_UNINITIALIZED',
+                         _blankTileX =        -1,
+                         _blankTileY =        -1,
+                         _toroidalGeometry =  toroidalGeometry and true or false}
 
     assert(newTileGrid.rowCount > 1 and newTileGrid.columnCount > 1, 'Error - invalid TileGrid instantiation arguments!')
 
@@ -58,6 +61,9 @@ function TileGrid:_initTileValues()
             tileNum = tileNum + 1
         end
     end
+
+    self._blankTileX = self.columnCount
+    self._blankTileY = self.rowCount
 end
 
 function TileGrid:cellCount()
@@ -97,6 +103,32 @@ function TileGrid:displayBoxChar()
     displayStr = displayStr .. self._bcFooter
 
     print(displayStr)
+end
+
+-- Consider top-left as the origin, as is the norm in computer graphics.
+-- a_col -> a_x, a_row -> a_y, b_col -> b_x, b_row -> b_y.
+function TileGrid:swap(a_col, a_row, b_col, b_row)
+    local cells = self.rows
+    local tmp_val = cells[b_row][b_col]
+
+    cells[b_row][b_col] = cells[a_row][a_col]
+    cells[a_row][a_col] = tmp_val
+end
+
+-- movement ::= 'up' | 'down' | 'left' | 'right'
+-- This only refers to the movement of the 'blank' tile (highest numbered).
+function TileGrid:move(movement)
+end
+
+function TileGrid:moveUp()
+    local x, y = self._blankTileX, self._blankTileY
+
+    if y ~= 1 then
+        self:swap(x, y, x, y - 1)
+        y = y - 1
+        
+        self._blankTileY = y
+    end
 end
 
 return TileGrid
