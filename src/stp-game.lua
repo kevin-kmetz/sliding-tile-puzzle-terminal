@@ -1,5 +1,25 @@
-local TileGrid = {display = function () return nil end}
+local TileGrid = {display = function () return nil end,
+                  movementMap = {}}
 TileGrid._mt_TileGrid = {__index = TileGrid}
+
+-- Wrapping the value of these constants in tables allows the references
+-- to be used for comparison instead of the value, which will lead to
+-- constant duplication when checking equality (this made more sense earlier
+-- in my implementation, when the constants pointed to strings and not functions).
+--
+-- Also, it allows me to implement the functions/methods they will refer to
+-- further down, rather than having to implement them BEFORE the constants themselves.
+--
+_UP, _DOWN, _LEFT, _RIGHT = {move = {}}, {move = {}}, {move = {}}, {move = {}}
+
+-- WASD, IJKL, and 'up', 'down', 'left', and 'right' are supported as input strings.
+-- This unfortunately leads to conflicts in the use of the 'd' and 'l' chars, which
+-- I have defaulted to giving WASD and IJKL precedence over the initialism.
+--
+TileGrid.movementMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP,
+                        down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN,
+                        left = _LEFT, L = _LEFT, a = _LEFT, j = _LEFT,
+                        right = _RIGHT, r = _RIGHT, R = _RIGHT, d = _RIGHT, l = _RIGHT}
 
 -- displayStyle ::= '_ASCII' | '_BOXCHAR'
 function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displayStyle)
@@ -77,6 +97,7 @@ function TileGrid:_initTileValues()
     -- I could also make all cells strings, but then that makes checking
     -- the sequential win-state annoying. I could also keep a second
     -- grid for the printable forms, but yuck - two grids? No thanks.
+    --
     self.rows[self._blankTileY][self._blankTileX] = ''
 end
 
@@ -131,7 +152,9 @@ end
 
 -- movement ::= 'up' | 'down' | 'left' | 'right'
 -- This only refers to the movement of the 'blank' tile (highest numbered).
-function TileGrid:move(movement)
+function TileGrid:move(movementStr)
+    local movement = self.movementMap[movementStr]
+    if movement then movement.move(self) end
 end
 
 function TileGrid:moveUp()
@@ -147,5 +170,21 @@ function TileGrid:moveUp()
         self:swap(x, y, x, self.rowCount)
     end
 end
+_UP.move = TileGrid.moveUp
+
+function TileGrid:moveDown()
+    local x, y = self._blankTileX, self._blankTileY
+    local onBottomEdge = y == self.rowCount and true or false
+
+    if not onBottomEdge then
+        self:swap(x, y, x, y + 1)
+        y = y + 1
+
+        self._blankTileY = y
+    elseif self._toroidalGeometry then
+        self:swap(x, y, x, 1)
+    end
+end
+_DOWN.move = TileGrid.moveDown
 
 return TileGrid
