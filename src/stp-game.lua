@@ -2,7 +2,7 @@ local TileGrid = {display = function () return nil end}
 TileGrid._mt_TileGrid = {__index = TileGrid}
 
 -- displayStyle ::= '_ASCII' | '_BOXCHAR'
-function TileGrid.new(numberOfRows, numberOfColumns, displayStyle, toroidalGeometry)
+function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displayStyle)
     local newTileGrid = {rows =               {},
                          rowCount =           numberOfRows and numberOfRows or 4,
                          columnCount =        numberOfColumns and numberOfColumns or 4,
@@ -136,12 +136,15 @@ end
 
 function TileGrid:moveUp()
     local x, y = self._blankTileX, self._blankTileY
+    local onTopEdge = y == 1 and true or false
 
-    if y ~= 1 then
+    if not onTopEdge then
         self:swap(x, y, x, y - 1)
         y = y - 1
 
         self._blankTileY = y
+    elseif self._toroidalGeometry then
+        self:swap(x, y, x, self.rowCount)
     end
 end
 
