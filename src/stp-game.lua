@@ -64,6 +64,20 @@ function TileGrid:_initTileValues()
 
     self._blankTileX = self.columnCount
     self._blankTileY = self.rowCount
+
+    -- This really isn't ideal, given that all other cells are numbers.
+    -- However, it shouldn't foul anything up, as all those numbers are
+    -- being 'tostring-ed' at time of display. The 'win-condition'
+    -- validation methods can also make use of the 'type' function to
+    -- check to see if a win-state is valid, so it really doesn't
+    -- complicate things.
+    --
+    -- The other ways to do this would be to check every cell at time
+    -- of display to 'blank-out' the cell, which is costly and slow.
+    -- I could also make all cells strings, but then that makes checking
+    -- the sequential win-state annoying. I could also keep a second
+    -- grid for the printable forms, but yuck - two grids? No thanks.
+    self.rows[self._blankTileY][self._blankTileX] = ''
 end
 
 function TileGrid:cellCount()
@@ -126,7 +140,7 @@ function TileGrid:moveUp()
     if y ~= 1 then
         self:swap(x, y, x, y - 1)
         y = y - 1
-        
+
         self._blankTileY = y
     end
 end
