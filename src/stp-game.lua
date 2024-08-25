@@ -14,7 +14,8 @@ function TileGrid.new(numberOfRows, numberOfColumns, displayStyle)
                          _asFooter =          '_UNINITIALIZED',
                          _bcHeader =          '_UNINITIALIZED',
                          _bcRowSeparator =    '_UNINITIALIZED',
-                         _bcFooter =          '_UNINITIALIZED'}
+                         _bcFooter =          '_UNINITIALIZED',
+                         _formatter =         '_UNINITIALIZED'}
 
     assert(newTileGrid.rowCount > 1 and newTileGrid.columnCount > 1, 'Error - invalid TileGrid instantiation arguments!')
 
@@ -33,14 +34,18 @@ function TileGrid:_initDisplayStyles()
     self.display = self._displayStyle == '_ASCII' and self.displayASCII or (self._displayStyle == '_BOXCHAR' and self.displayBoxChar)
 
     self._middleColumnCount = self.columnCount > 2 and self.columnCount - 2 or 0
+    -- Subtract one because the final tile number isn't displayed, insteading being blank.
+    local maxDigits = #(tostring(self:cellCount() - 1))
+    self._formatter = '%' .. tostring(maxDigits) .. 's'
 
-    self._asHeader =       '\n' .. string.rep(' ----', self.columnCount)
-    self._asRowSeparator = '\n' .. string.rep(' ----', self.columnCount)
-    self._asFooter =       '\n' .. string.rep(' ----', self.columnCount) .. '\n'
+    self._asHeader =       '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
+    self._asRowSeparator = '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
+    self._asFooter =       '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount) .. '\n'
 
-    self._bcHeader =       '\n╔════' .. ('╦════'):rep(self._middleColumnCount) .. '╦════╗'
-    self._bcRowSeparator = '\n╠════' .. ('╬════'):rep(self._middleColumnCount) .. '╬════╣'
-    self._bcFooter =       '\n╚════' .. ('╩════'):rep(self._middleColumnCount) .. '╩════╝' .. '\n'
+    local blocks = ('═'):rep(maxDigits + 2)
+    self._bcHeader =       '\n╔' .. blocks .. ('╦' .. blocks):rep(self._middleColumnCount) .. '╦' .. blocks .. '╗'
+    self._bcRowSeparator = '\n╠' .. blocks .. ('╬' .. blocks):rep(self._middleColumnCount) .. '╬' .. blocks .. '╣'
+    self._bcFooter =       '\n╚' .. blocks .. ('╩' .. blocks):rep(self._middleColumnCount) .. '╩' .. blocks .. '╝' .. '\n'
 
 end
 
@@ -55,13 +60,17 @@ function TileGrid:_initTileValues()
     end
 end
 
+function TileGrid:cellCount()
+    return self.rowCount * self.columnCount
+end
+
 function TileGrid:displayASCII()
     local displayStr = ''
 
     for _, r in ipairs(self.rows) do
         displayStr = displayStr .. self._asRowSeparator .. '\n'
         for _, c in ipairs(r) do
-            displayStr = displayStr .. '| ' .. string.format('%2s', c) .. ' '
+            displayStr = displayStr .. '| ' .. string.format(self._formatter, c) .. ' '
         end
         displayStr = displayStr .. '|'
     end
@@ -79,7 +88,7 @@ function TileGrid:displayBoxChar()
     for i, r in ipairs(self.rows) do
         displayStr = displayStr .. '\n'
         for _, c in ipairs(r) do
-            displayStr = displayStr .. '║ ' .. string.format('%2s', c) .. ' '
+            displayStr = displayStr .. '║ ' .. string.format(self._formatter, c) .. ' '
         end
         displayStr = displayStr .. '║'
         if i ~= self.rowCount then displayStr = displayStr .. self._bcRowSeparator end
