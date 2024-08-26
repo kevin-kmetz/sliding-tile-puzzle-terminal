@@ -4,22 +4,34 @@ TileGrid._mt_TileGrid = {__index = TileGrid}
 
 -- Wrapping the value of these constants in tables allows the references
 -- to be used for comparison instead of the value, which will lead to
--- constant duplication when checking equality (this made more sense earlier
--- in my implementation, when the constants pointed to strings and not functions).
+-- constant duplication when checking equality (for example, the four '_UP's
+-- in the inputMap below would all duplicate the 'up' string if not wrapped.
+-- Instead, they all point to the single table. Maybe its not important here
+-- because there aren't that many uses of them, but a string itself is no better..
 --
--- Also, it allows me to implement the functions/methods they will refer to
--- further down, rather than having to implement them BEFORE the constants themselves.
---
-_UP, _DOWN, _LEFT, _RIGHT = {move = {}}, {move = {}}, {move = {}}, {move = {}}
+_UP, _DOWN, _LEFT, _RIGHT = {move = {'up'}}, {move = {'down'}}, {move = {'left'}}, {move = {'right'}}
 
 -- WASD, IJKL, and 'up', 'down', 'left', and 'right' are supported as input strings.
 -- This unfortunately leads to conflicts in the use of the 'd' and 'l' chars, which
 -- I have defaulted to giving WASD and IJKL precedence over the initialism.
 --
-TileGrid.movementMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP,
-                        down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN,
-                        left = _LEFT, L = _LEFT, a = _LEFT, j = _LEFT,
-                        right = _RIGHT, r = _RIGHT, R = _RIGHT, d = _RIGHT, l = _RIGHT}
+TileGrid.movementInputMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP,
+                             down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN,
+                             left = _LEFT, L = _LEFT, a = _LEFT, j = _LEFT,
+                             right = _RIGHT, r = _RIGHT, R = _RIGHT, d = _RIGHT, l = _RIGHT}
+
+TileGrid.movementLambdasMap = {[_UP]    = {onBoundingEdge = function (tileGrid) return tileGrid._blankTileY == 1 end,
+                                           swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX, tileGrid._blankTileY - 1) end,
+                                           swapToroidally = function (tileGrid) tileGrid:swap(tileGrid._blankTileX, tileGrid.rowCount) end},
+                               [_DOWN]  = {onBoundingEdge = function (tileGrid) return tileGrid._blankTileY == tileGrid.rowCount end,
+                                           swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX, tileGrid._blankTileY + 1) end,
+                                           swapToroidally = function (tileGrid) tileGrid:swap(tileGrid._blankTileX, 1) end},
+                               [_LEFT]  = {onBoundingEdge = function (tileGrid) return tileGrid._blankTileX == 1 end,
+                                           swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX - 1, tileGrid._blankTileY) end,
+                                           swapToroidally = function (tileGrid) tileGrid:swap(tileGrid.columnCount, tileGrid._blankTileY) end},
+                               [_RIGHT] = {onBoundingEdge = function (tileGrid) return tileGrid._blankTileX == tileGrid.columnCount end,
+                                           swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX + 1, tileGrid._blankTileY) end,
+                                           swapToroidally = function (tileGrid) tileGrid:swap(1, tileGrid._blankTileY) end}}
 
 -- displayStyle ::= '_ASCII' | '_BOXCHAR'
 function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displayStyle)
@@ -141,88 +153,48 @@ function TileGrid:displayBoxChar()
 end
 
 -- Consider top-left as the origin, as is the norm in computer graphics.
--- a_col -> a_x, a_row -> a_y, b_col -> b_x, b_row -> b_y.
-function TileGrid:swap(a_col, a_row, b_col, b_row)
-    local cells = self.rows
-    local tmp_val = cells[b_row][b_col]
+function TileGrid:swap(otherX, otherY)
+    local tempValue = self.rows[otherY][otherX]
 
-    cells[b_row][b_col] = cells[a_row][a_col]
-    cells[a_row][a_col] = tmp_val
+    self.rows[otherY][otherX] = self.rows[self._blankTileY][self._blankTileX]
+    self.rows[self._blankTileY][self._blankTileX] = tempValue
+
+    self._blankTileX = otherX
+    self._blankTileY = otherY
 end
 
--- movement ::= 'up' | 'down' | 'left' | 'right'
+-- movementStr ::= 'up' | 'down' | 'left' | 'right'
 -- This only refers to the movement of the 'blank' tile (highest numbered).
-function TileGrid:move(movementStr)
-    local movement = self.movementMap[movementStr]
-    if movement then movement.move(self) end
-end
+function TileGrid:move(inputString)
+    local movement = self.movementInputMap[inputString]
+    if not movement then
+        print('Error - invalid movement input!')
+        return
+    end
 
-function TileGrid:moveUp()
-    local x, y = self._blankTileX, self._blankTileY
-    local onTopEdge = y == 1 and true or false
+    local functionMap = self.movementLambdasMap[movement]
 
-    if not onTopEdge then
-        self:swap(x, y, x, y - 1)
-        y = y - 1
-
-        self._blankTileY = y
+    if not functionMap.onBoundingEdge(self) then
+        functionMap.swapNormally(self)
     elseif self._toroidalGeometry then
-        self:swap(x, y, x, self.rowCount)
-        y = self.rowCount
-        self._blankTileY = y
+        functionMap.swapToroidally(self)
     end
 end
-_UP.move = TileGrid.moveUp
 
-function TileGrid:moveDown()
-    local x, y = self._blankTileX, self._blankTileY
-    local onBottomEdge = y == self.rowCount and true or false
+--[[ Pseudocoded generalized movement method:
+(Leaving this in for a single commit - implemented successfully)
+function TileGrid:generalizedMove()
+    -- alias the x and y coords for convenient referencing and reading
+    -- determine restriction based on intended movement direction
 
-    if not onBottomEdge then
-        self:swap(x, y, x, y + 1)
-        y = y + 1
-
-        self._blankTileY = y
-    elseif self._toroidalGeometry then
-        self:swap(x, y, x, 1)
-        y = 1
-        self._blankTileY = 1
-    end
-end
-_DOWN.move = TileGrid.moveDown
-
-function TileGrid:moveLeft()
-    local x, y = self._blankTileX, self._blankTileY
-    local onLeftEdge = x == 1 and true or false
-
-    if not onLeftEdge then
-        self:swap(x, y, x - 1, y)
-        x = x - 1
-
-        self._blankTileX = x
-    elseif self._toroidalGeometry then
-        self:swap(x, y, self.columnCount, y)
-        x = self.columnCount
-        self._blankTileX = x
-    end
-end
-_LEFT.move = TileGrid.moveLeft
-
-function TileGrid:moveRight()
-    local x, y = self._blankTileX, self._blankTileY
-    local onRightEdge = x == self.columnCount and true or false
-
-    if not onRightEdge then
-        self:swap(x, y, x + 1, y)
-        x = x + 1
-
-        self._blankTileX = x
-    elseif self._toroidalGeometry then
-        self:swap(x, y, 1, y)
-        x = 1
-        self._blankTileX = x
-    end
-end
-_RIGHT.move = TileGrid.moveRight
+    -- if not in opposition to restriction
+        -- then swap in that direction
+        -- increment/decrement accordingly
+    -- else if toroidal geometry active
+    -- (implied that in opposition, since if not, toroidal doesn't matter)
+        -- perform toroidal swap
+        -- increment accordingly
+    -- endif
+end--]]
 
 return TileGrid
