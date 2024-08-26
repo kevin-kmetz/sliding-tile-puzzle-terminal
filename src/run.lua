@@ -1,4 +1,4 @@
-TileGrid = require 'stp-game'
+TileGrid = require 'stp/TileGrid'
 tg = TileGrid
 
 g = TileGrid.new(4, 4)
