@@ -201,4 +201,38 @@ function TileGrid:undo()
     return false
 end
 
+function TileGrid:isInWinState()
+    -- Rather than doing a strictly sequential verification, all of these checks
+    -- guarantee the elements are in order, even if not all values are checked.
+    -- For example, first elements of rows aren't check against last elements
+    -- of the previous row. It doesn't matter, however, because of the initial
+    -- checks and the sequential guarantee of the +1.
+    local rowCount = self.rowCount
+    local columnCount = self.columnCount
+    local rows = self.rows
+
+    -- No point in going through all the trouble of iterating over each element
+    -- to check sequentiality if the final element is the expected element.
+    if rows[rowCount][columnCount] ~= '' then return false end
+    if rows[1][1] ~= 1 then return false end
+    if rows[rowCount][columnCount - 1] ~= rowCount * columnCount - 1 then return false end
+
+    -- Check all except last row, since last row's final element is a string and it would be annoying
+    -- to type check every tile.
+    for r = 1, rowCount - 1 do
+        for c = 2, columnCount  do
+            if rows[r][c] ~= rows[r][c - 1] + 1 then return false end
+        end
+    end
+
+    -- Handles final row. If there are less than 2 columns, no need to check.
+    if columnCount > 2 then
+        for c = 2, columnCount - 1 do
+            if rows[rowCount][c] ~= rows[rowCount][c - 1] + 1 then return false end
+        end
+    end
+
+    return true
+end
+
 return TileGrid
