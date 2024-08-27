@@ -1,4 +1,4 @@
-if not TileGrid then TileGrid = require 'TileGrid' end
+if not TileGrid then TileGrid = require 'stp/TileGrid' end
 
 local moveMap = {'up', 'down', 'left', 'right'}
 

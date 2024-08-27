@@ -2,6 +2,15 @@ local TileGrid = {display = function () return nil end,
                   movementMap = {}}
 TileGrid._mt_TileGrid = {__index = TileGrid}
 
+local push = function (value, tbl) tbl[#tbl + 1] = value; return #tbl end
+local pop = function (tbl)
+    if #tbl > 0 then
+        local value = tbl[#tbl]
+        tbl[#tbl] = nil
+        return value
+    end
+end
+
 -- Wrapping the value of these constants in tables allows the references
 -- to be used for comparison instead of the value, which will lead to
 -- constant duplication when checking equality (for example, the four '_UP's
@@ -9,16 +18,16 @@ TileGrid._mt_TileGrid = {__index = TileGrid}
 -- Instead, they all point to the single table. Maybe its not important here
 -- because there aren't that many uses of them, but a string itself is no better..
 --
-_UP, _DOWN, _LEFT, _RIGHT = {move = {'up'}}, {move = {'down'}}, {move = {'left'}}, {move = {'right'}}
+_UP, _DOWN, _LEFT, _RIGHT = {move = 'up'}, {move = 'down'}, {move = 'left'}, {move = 'right'}
 
 -- WASD, IJKL, and 'up', 'down', 'left', and 'right' are supported as input strings.
 -- This unfortunately leads to conflicts in the use of the 'd' and 'l' chars, which
 -- I have defaulted to giving WASD and IJKL precedence over the initialism.
 --
-TileGrid.movementInputMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP,
-                             down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN,
-                             left = _LEFT, L = _LEFT, a = _LEFT, j = _LEFT,
-                             right = _RIGHT, r = _RIGHT, R = _RIGHT, d = _RIGHT, l = _RIGHT}
+TileGrid.movementInputMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP, [_UP] = _UP,
+                             down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN, [_DOWN] = _DOWN,
+                             left = _LEFT, L = _LEFT, a = _LEFT, j = _LEFT, [_LEFT] = _LEFT,
+                             right = _RIGHT, r = _RIGHT, R = _RIGHT, d = _RIGHT, l = _RIGHT, [_RIGHT] = _RIGHT}
 
 TileGrid.movementLambdasMap = {[_UP]    = {onBoundingEdge = function (tileGrid) return tileGrid._blankTileY == 1 end,
                                            swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX, tileGrid._blankTileY - 1) end,
@@ -50,7 +59,8 @@ function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displaySt
                          _formatter =         '_UNINITIALIZED',
                          _blankTileX =        -1,
                          _blankTileY =        -1,
-                         _toroidalGeometry =  toroidalGeometry and true or false}
+                         _toroidalGeometry =  toroidalGeometry or false,
+                         _moveHistory =       {}}
 
     assert(newTileGrid.rowCount > 1 and newTileGrid.columnCount > 1, 'Error - invalid TileGrid instantiation arguments!')
 
@@ -169,7 +179,7 @@ function TileGrid:move(inputString)
     local movement = self.movementInputMap[inputString]
     if not movement then
         print('Error - invalid movement input!')
-        return
+        return false
     end
 
     local functionMap = self.movementLambdasMap[movement]
@@ -179,22 +189,14 @@ function TileGrid:move(inputString)
     elseif self._toroidalGeometry then
         functionMap.swapToroidally(self)
     end
+
+    push(movement, self._moveHistory)
+    return true
 end
 
---[[ Pseudocoded generalized movement method:
-(Leaving this in for a single commit - implemented successfully)
-function TileGrid:generalizedMove()
-    -- alias the x and y coords for convenient referencing and reading
-    -- determine restriction based on intended movement direction
-
-    -- if not in opposition to restriction
-        -- then swap in that direction
-        -- increment/decrement accordingly
-    -- else if toroidal geometry active
-    -- (implied that in opposition, since if not, toroidal doesn't matter)
-        -- perform toroidal swap
-        -- increment accordingly
-    -- endif
-end--]]
+function TileGrid:undo()
+    if #self._moveHistory > 0 then return self:move(pop(self._moveHistory).move) end
+    return false
+end
 
 return TileGrid
