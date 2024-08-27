@@ -1,4 +1,4 @@
-Disorder = require 'stp/Disorder'
+disorder = require 'stp/Disorder'
 tg = TileGrid
 
 g = TileGrid.new(4, 4)
