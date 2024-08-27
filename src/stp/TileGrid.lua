@@ -42,6 +42,8 @@ TileGrid.movementLambdasMap = {[_UP]    = {onBoundingEdge = function (tileGrid) 
                                            swapNormally =   function (tileGrid) tileGrid:swap(tileGrid._blankTileX + 1, tileGrid._blankTileY) end,
                                            swapToroidally = function (tileGrid) tileGrid:swap(1, tileGrid._blankTileY) end}}
 
+TileGrid.reverseMovementMap = {[_UP] = _DOWN, [_DOWN] = _UP, [_LEFT] = _RIGHT, [_RIGHT] = _LEFT}
+
 -- displayStyle ::= '_ASCII' | '_BOXCHAR'
 function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displayStyle)
     local newTileGrid = {rows =               {},
@@ -175,7 +177,7 @@ end
 
 -- movementStr ::= 'up' | 'down' | 'left' | 'right'
 -- This only refers to the movement of the 'blank' tile (highest numbered).
-function TileGrid:move(inputString)
+function TileGrid:move(inputString, dontRecordMove)
     local movement = self.movementInputMap[inputString]
     if not movement then
         print('Error - invalid movement input!')
@@ -190,12 +192,12 @@ function TileGrid:move(inputString)
         functionMap.swapToroidally(self)
     end
 
-    push(movement, self._moveHistory)
+    if not dontRecordMove then push(movement, self._moveHistory) end
     return true
 end
 
 function TileGrid:undo()
-    if #self._moveHistory > 0 then return self:move(pop(self._moveHistory).move) end
+    if #self._moveHistory > 0 then return self:move(self.reverseMovementMap[pop(self._moveHistory)].move, true) end
     return false
 end
 
