@@ -21,6 +21,23 @@ initInputGetters = function ()
                                                   'Choice: ',
                                                   InputGetter.generateInputValidator('string', {'play', 'p', 'quit', 'q'}),
                                                   'Invalid choice - please try again!')
+
+    getPuzzleWidth = InputGetter.generateInputGetter('Enter the desired width of the puzzle, in number of tiles.',
+                                                      'Width: ',
+                                                      InputGetter.generateInputValidator('number', nil,
+                                                          function (num) return math.type(num) == 'integer' and num > 1 end),
+                                                      'Invalid width - please try again!')
+
+    getPuzzleHeight = InputGetter.generateInputGetter('Enter the desired height of the puzzle, in number of tiles.',
+                                                      'Height: ',
+                                                      InputGetter.generateInputValidator('number', nil,
+                                                          function (num) return math.type(num) == 'integer' and num > 1 end),
+                                                      'Invalid height - please try again!')
+
+    getToroidalStatus = InputGetter.generateInputGetter("Should the puzzle be toroidal? Please enter 'yes' or 'no' (y/n).",
+                                                        'Toroidal puzzle: ',
+                                                        InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
+                                                        'Invalid choice - please try again!')
 end
 
 run = function ()
@@ -48,7 +65,17 @@ playGame = function ()
 end
 
 initGame = function ()
-    print('What are the dimensions of the puzzle you would like to solve?')
+    local width = getPuzzleWidth()
+    local height = getPuzzleHeight()
+    local isToroidal = getToroidalStatus()
+
+    if isToroidal == 'yes' or isToroidal == 'y' then
+        isToroidal = true
+    else
+        isToroidal = false
+    end
+
+    return TileGrid.new(width, height, isToroidal)
 end
 
 gameLoop = function ()

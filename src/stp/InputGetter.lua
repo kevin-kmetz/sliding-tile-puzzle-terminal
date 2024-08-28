@@ -36,6 +36,7 @@ end
 InputGetter.generateInputValidator = function (requiredType, validList, extraCriteriaLambda)
     return function (input)
         local inputIsValid = true
+        if requiredType and (requiredType == 'number' or requiredType == 'integer' or requiredType == 'float') then input = tonumber(input) end
         if input == nil then inputIsValid, input = false, nil end
 
         if input and type(input) ~= requiredType then inputIsValid, input = false, nil end
