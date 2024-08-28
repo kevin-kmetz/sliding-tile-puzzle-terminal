@@ -184,7 +184,7 @@ function TileGrid:move(inputString, dontRecordMove)
         return false
     end
 
-    local functionMap = self.movementLambdasMap[movement]
+    local functionMap = self.movementLambdasMap[self.reverseMovementMap[movement]]
 
     if not functionMap.onBoundingEdge(self) then
         functionMap.swapNormally(self)

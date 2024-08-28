@@ -93,7 +93,7 @@ initGame = function ()
         isToroidal = false
     end
 
-    return TileGrid.new(width, height, isToroidal)
+    return TileGrid.new(height, width, isToroidal)
 end
 
 -- f: (TileGrid) -> ()
