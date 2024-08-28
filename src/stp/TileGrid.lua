@@ -190,6 +190,8 @@ function TileGrid:move(inputString, dontRecordMove)
         functionMap.swapNormally(self)
     elseif self._toroidalGeometry then
         functionMap.swapToroidally(self)
+    else
+        return false
     end
 
     if not dontRecordMove then push(movement, self._moveHistory) end

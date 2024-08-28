@@ -16,11 +16,21 @@ local initGame
 local gameLoop
 local exitGame
 
+local push = function (val, tbl) tbl[#tbl + 1] = val; return #tbl end
+
+local legalMovementInputs = (function ()
+    local legalInputs = {}
+    for k, _ in pairs(TileGrid.movementInputMap) do push(k, legalInputs) end
+    return legalInputs
+end)()
+
 initInputGetters = function ()
-    getPlayGame = InputGetter.generateInputGetter("Enter 'play' (p) to play a game, or 'quit' (q) to quit.",
+    local msgInvalidChoice = 'Invalid choice - please try again!'
+
+    getPlayGame = InputGetter.generateInputGetter("\nEnter 'play' (p) to play a game, or 'quit' (q) to quit.",
                                                   'Choice: ',
                                                   InputGetter.generateInputValidator('string', {'play', 'p', 'quit', 'q'}),
-                                                  'Invalid choice - please try again!')
+                                                  msgInvalidChoice)
 
     getPuzzleWidth = InputGetter.generateInputGetter('Enter the desired width of the puzzle, in number of tiles.',
                                                       'Width: ',
@@ -37,7 +47,15 @@ initInputGetters = function ()
     getToroidalStatus = InputGetter.generateInputGetter("Should the puzzle be toroidal? Please enter 'yes' or 'no' (y/n).",
                                                         'Toroidal puzzle: ',
                                                         InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
-                                                        'Invalid choice - please try again!')
+                                                        msgInvalidChoice)
+
+    local msgMovement = "\nIn which direction should a tile be slid?"
+    msgMovement = msgMovement .. "\nType a single character from 'WASD' or 'IJKL' corresponding to a direction,"
+    msgMovement = msgMovement .. "\nand then press enter."
+    getMovementInput = InputGetter.generateInputGetter(msgMovement, 'Movement direction: ',
+                                                       InputGetter.generateInputValidator('string', legalMovementInputs),
+                                                       msgInvalidChoice)
+
 end
 
 run = function ()
@@ -59,8 +77,8 @@ solicitGame = function ()
 end
 
 playGame = function ()
-    local game = initGame()
-    gameLoop()
+    local puzzle = initGame()
+    gameLoop(puzzle)
     exitGame()
 end
 
@@ -78,7 +96,19 @@ initGame = function ()
     return TileGrid.new(width, height, isToroidal)
 end
 
-gameLoop = function ()
+-- f: (TileGrid) -> ()
+gameLoop = function (puzzle)
+    disorder(puzzle)
+    puzzle:display()
+
+    while (not puzzle:isInWinState()) do
+        local moveInput = getMovementInput()
+        local moveWasPossible = puzzle:move(moveInput)
+        puzzle:display()
+        if not moveWasPossible then print ("Movement '" .. moveInput .. "' is not valid. Try another!") end
+    end
+
+    print('Congratulations - you solved the puzzle! Hooray!')
 end
 
 exitGame = function ()
