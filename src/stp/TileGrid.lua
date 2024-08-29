@@ -85,14 +85,14 @@ function TileGrid:_initDisplayStyles()
     local maxDigits = #(tostring(self:cellCount() - 1))
     self._formatter = '%' .. tostring(maxDigits) .. 's'
 
-    self._asHeader =       '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
+    self._asHeader =               (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
     self._asRowSeparator = '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
-    self._asFooter =       '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount) .. '\n'
+    self._asFooter =       '\n' .. (' ' .. ('-'):rep(maxDigits + 2)):rep(self.columnCount)
 
     local blocks = ('═'):rep(maxDigits + 2)
-    self._bcHeader =       '\n╔' .. blocks .. ('╦' .. blocks):rep(self._middleColumnCount) .. '╦' .. blocks .. '╗'
+    self._bcHeader =         '╔' .. blocks .. ('╦' .. blocks):rep(self._middleColumnCount) .. '╦' .. blocks .. '╗'
     self._bcRowSeparator = '\n╠' .. blocks .. ('╬' .. blocks):rep(self._middleColumnCount) .. '╬' .. blocks .. '╣'
-    self._bcFooter =       '\n╚' .. blocks .. ('╩' .. blocks):rep(self._middleColumnCount) .. '╩' .. blocks .. '╝' .. '\n'
+    self._bcFooter =       '\n╚' .. blocks .. ('╩' .. blocks):rep(self._middleColumnCount) .. '╩' .. blocks .. '╝'
 
 end
 

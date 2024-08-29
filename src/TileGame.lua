@@ -33,7 +33,6 @@ initLegalInputs = function ()
                          ['help'] = displayHelp,  ['h'] = displayHelp,
                          ['solve'] = solvePuzzle}
 
-
     for k, _ in pairs(TileGrid.movementInputMap) do
         push(k, legalInputs)
     end
@@ -48,7 +47,7 @@ end
 initInputGetters = function (legalInputs)
     local msgInvalidChoice = 'Invalid choice - please try again!'
 
-    getPlayGame = InputGetter.generateInputGetter("\nEnter 'play' (p) to play a game, or 'quit' (q) to quit.",
+    getPlayGame = InputGetter.generateInputGetter("\nEnter 'play' (p) to attempt a puzzle, or 'quit' (q) to quit.",
                                                   'Choice: ',
                                                   InputGetter.generateInputValidator('string', {'play', 'p', 'quit', 'q'}),
                                                   msgInvalidChoice)
@@ -70,21 +69,28 @@ initInputGetters = function (legalInputs)
                                                         InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
                                                         msgInvalidChoice)
 
-    local msgMovement = "\nIn which direction should a tile be slid?"
-    msgMovement = msgMovement .. "\nType a single character from 'WASD' or 'IJKL' corresponding to a direction,"
-    msgMovement = msgMovement .. "\nand then press enter."
-    getChoiceInput = InputGetter.generateInputGetter(msgMovement, 'Movement direction: ',
+    local msgMovement = "\nIn which direction should a tile be slid?\n" ..
+                        "\n>>Type a single character from 'WASD' or 'IJKL'" ..
+                        "\n>>and then press <enter>. Alternatively, type" ..
+                        "\n>>'help' for additional options.\n"
+    getChoiceInput = InputGetter.generateInputGetter(msgMovement, ' Choice: ',
                                                      InputGetter.generateInputValidator('string', legalInputs),
                                                      msgInvalidChoice)
+
+    getQuitConfirmation = InputGetter.generateInputGetter("Are you sure you want to give up on the current puzzle?" ..
+                                                          "\nPlease enter 'yes' or 'no' (y/n).",
+                                                          'Quiz puzzle?: ',
+                                                          InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
+                                                          msgInvalidChoice)
 
 end
 
 run = function ()
-    print('Sliding Tile Puzzle Game v1.0 - Terminal version')
+    print('\nSliding Tile Puzzle Game v1.0 - Terminal version')
     local legalInputs = initLegalInputs()
     initInputGetters(legalInputs)
     solicitGame()
-    print('Thanks for playing! Now exiting the game...')
+    print('Thanks for playing! Now exiting the game...\n')
 end
 
 solicitGame = function ()
@@ -127,7 +133,8 @@ gameLoop = function (puzzle)
         local choiceInput = getChoiceInput()
 
         if commandInputsMap[choiceInput] then
-            commandInputsMap[choiceInput]()
+            local commandResult = commandInputsMap[choiceInput]()
+            if commandResult == '_QUIT' then return end
             puzzle:display()
         else
             local moveWasPossible = puzzle:move(choiceInput)
@@ -137,17 +144,25 @@ gameLoop = function (puzzle)
 
    end
 
-    print('Congratulations - you solved the puzzle! Hooray!')
+    print('\nCongratulations - you solved the puzzle! Hooray!')
 end
 
 exitGame = function ()
-    print('Concluding a single game...')
+    print('\nCurrent puzzle concluded.\nWould you like to attempt another puzzle?')
 end
 
 undoLastMove = function ()
 end
 
 quitPuzzle = function ()
+    local choice = getQuitConfirmation()
+
+    if choice == 'yes' or choice == 'y' then
+        print('Now quitting the current puzzle...')
+        return '_QUIT'
+    end
+
+    print('Quit aborted. Resuming the puzzle...\n')
 end
 
 local helpMsg = [[
@@ -161,7 +176,8 @@ local helpMsg = [[
             'quit' or 'q' -> Quit the current puzzle.
             'undo' or 'x' -> Undo the last move made.
             'help' or 'h' -> Display this help message.
-            'solve'       -> Reveal the solution to the puzzle.]]
+            'solve'       -> Reveal the solution to the puzzle.
+]]
 
 displayHelp = function ()
     print(helpMsg)
