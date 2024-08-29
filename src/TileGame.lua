@@ -70,10 +70,10 @@ initInputGetters = function (legalInputs)
                                                         msgInvalidChoice)
 
     local msgMovement = "\nIn which direction should a tile be slid?\n" ..
-                        "\n>>Type a single character from 'WASD' or 'IJKL'" ..
-                        "\n>>and then press <enter>. Alternatively, type" ..
-                        "\n>>'help' for additional options.\n"
-    getChoiceInput = InputGetter.generateInputGetter(msgMovement, ' Choice: ',
+                        "\n>> Type a single character from 'WASD' or 'IJKL'" ..
+                        "\n>> and then press <enter>. Alternatively, type" ..
+                        "\n>> 'help' for additional options.\n"
+    getChoiceInput = InputGetter.generateInputGetter(msgMovement, 'Choice: ',
                                                      InputGetter.generateInputValidator('string', legalInputs),
                                                      msgInvalidChoice)
 
@@ -128,18 +128,21 @@ end
 gameLoop = function (puzzle)
     disorder(puzzle)
     puzzle:display()
+    local playerMoveCount = 0
 
     while (not puzzle:isInWinState()) do
         local choiceInput = getChoiceInput()
 
         if commandInputsMap[choiceInput] then
-            local commandResult = commandInputsMap[choiceInput]()
-            if commandResult == '_QUIT' then return end
+            local commandResult, extraData = commandInputsMap[choiceInput](puzzle, playerMoveCount)
+            if commandResult == '_QUIT' then return
+            elseif commandResult == '_UNDO_SUCCESSFUL' then playerMoveCount = extraData end
             puzzle:display()
         else
             local moveWasPossible = puzzle:move(choiceInput)
+            if moveWasPossible then playerMoveCount = playerMoveCount + 1 end
             puzzle:display()
-            if not moveWasPossible then print ("Movement '" .. choiceInput .. "' is not valid. Try another!") end
+            if not moveWasPossible then print ("\nMovement '" .. choiceInput .. "' is not valid. Try another!") end
         end
 
    end
@@ -151,7 +154,13 @@ exitGame = function ()
     print('\nCurrent puzzle concluded.\nWould you like to attempt another puzzle?')
 end
 
-undoLastMove = function ()
+undoLastMove = function (tileGrid, playerMoveCount)
+    if playerMoveCount > 0 then
+        tileGrid:undo()
+        return '_UNDO_SUCCESSFUL', playerMoveCount - 1
+    else
+        print('No player moves exist to undo!\n')
+    end
 end
 
 quitPuzzle = function ()
