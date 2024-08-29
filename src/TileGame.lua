@@ -99,6 +99,12 @@ initInputGetters = function (legalInputs)
                                                           InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
                                                           msgInvalidChoice)
 
+    getSolveConfirmation = InputGetter.generateInputGetter("Are you sure you want to the CPU to solve the puzzle?" ..
+                                                           "\nPlease enter 'yes' or 'no' (y/n).",
+                                                           'Solve puzzle?: ',
+                                                           InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
+                                                           msgInvalidChoice)
+
 end
 
 run = function ()
@@ -161,6 +167,9 @@ gameLoop = function (puzzle)
             elseif commandResult == '_RESET' then
                 puzzle = puzzleCopyForReset:deepCopy()
                 playerMoveCount = 0
+            elseif commandResult == '_SOLVED' then
+                print('The puzzle has been solved!')
+                return
             end
 
             puzzle:display()
@@ -219,7 +228,28 @@ displayHelp = function ()
     print(helpMsg)
 end
 
-solvePuzzle = function ()
+solvePuzzle = function (puzzle, playerMoveCount)
+    local choice = getSolveConfirmation()
+
+    if choice == 'no' or choice == 'n' then
+        print('Solve aborted. Resuming the current puzzle...\n')
+        return
+    end
+
+    for i = playerMoveCount, 1, -1 do
+        puzzle:undo()
+        playerMoveCount = playerMoveCount - 1
+        puzzle:display()
+        sleep(0.25)
+        if puzzle:isInWinState() then return '_SOLVED' end
+    end
+
+    for i = 1, #puzzle._moveHistory do
+        puzzle:undo()
+        puzzle:display()
+        sleep(0.25)
+        if puzzle:isInWinState() then return '_SOLVED' end
+    end
 end
 
 displayMoveCount = function(_, playerMoveCount)
