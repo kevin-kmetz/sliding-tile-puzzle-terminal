@@ -12,19 +12,40 @@ local getPlayGame
 local solicitGame
 
 local playGame
+local initLegalInputs
+local commandInputsMap
 local initGame
 local gameLoop
 local exitGame
 
 local push = function (val, tbl) tbl[#tbl + 1] = val; return #tbl end
 
-local legalMovementInputs = (function ()
-    local legalInputs = {}
-    for k, _ in pairs(TileGrid.movementInputMap) do push(k, legalInputs) end
-    return legalInputs
-end)()
+local undoLastMove
+local quitPuzzle
+local displayHelp
+local solvePuzzle
+local sleep
 
-initInputGetters = function ()
+initLegalInputs = function ()
+    local legalInputs = {}
+    commandInputsMap  = {['undo'] = undoLastMove, ['x'] = undoLastMove,
+                         ['quit'] = quitPuzzle,   ['q'] = quitPuzzle,
+                         ['help'] = displayHelp,  ['h'] = displayHelp,
+                         ['solve'] = solvePuzzle}
+
+
+    for k, _ in pairs(TileGrid.movementInputMap) do
+        push(k, legalInputs)
+    end
+
+    for k, _ in pairs(commandInputsMap) do
+        push(k, legalInputs)
+    end
+
+    return legalInputs
+end
+
+initInputGetters = function (legalInputs)
     local msgInvalidChoice = 'Invalid choice - please try again!'
 
     getPlayGame = InputGetter.generateInputGetter("\nEnter 'play' (p) to play a game, or 'quit' (q) to quit.",
@@ -33,10 +54,10 @@ initInputGetters = function ()
                                                   msgInvalidChoice)
 
     getPuzzleWidth = InputGetter.generateInputGetter('Enter the desired width of the puzzle, in number of tiles.',
-                                                      'Width: ',
-                                                      InputGetter.generateInputValidator('number', nil,
-                                                          function (num) return math.type(num) == 'integer' and num > 1 end),
-                                                      'Invalid width - please try again!')
+                                                     'Width: ',
+                                                     InputGetter.generateInputValidator('number', nil,
+                                                         function (num) return math.type(num) == 'integer' and num > 1 end),
+                                                     'Invalid width - please try again!')
 
     getPuzzleHeight = InputGetter.generateInputGetter('Enter the desired height of the puzzle, in number of tiles.',
                                                       'Height: ',
@@ -52,15 +73,16 @@ initInputGetters = function ()
     local msgMovement = "\nIn which direction should a tile be slid?"
     msgMovement = msgMovement .. "\nType a single character from 'WASD' or 'IJKL' corresponding to a direction,"
     msgMovement = msgMovement .. "\nand then press enter."
-    getMovementInput = InputGetter.generateInputGetter(msgMovement, 'Movement direction: ',
-                                                       InputGetter.generateInputValidator('string', legalMovementInputs),
-                                                       msgInvalidChoice)
+    getChoiceInput = InputGetter.generateInputGetter(msgMovement, 'Movement direction: ',
+                                                     InputGetter.generateInputValidator('string', legalInputs),
+                                                     msgInvalidChoice)
 
 end
 
 run = function ()
     print('Sliding Tile Puzzle Game v1.0 - Terminal version')
-    initInputGetters()
+    local legalInputs = initLegalInputs()
+    initInputGetters(legalInputs)
     solicitGame()
     print('Thanks for playing! Now exiting the game...')
 end
@@ -102,17 +124,57 @@ gameLoop = function (puzzle)
     puzzle:display()
 
     while (not puzzle:isInWinState()) do
-        local moveInput = getMovementInput()
-        local moveWasPossible = puzzle:move(moveInput)
-        puzzle:display()
-        if not moveWasPossible then print ("Movement '" .. moveInput .. "' is not valid. Try another!") end
-    end
+        local choiceInput = getChoiceInput()
+
+        if commandInputsMap[choiceInput] then
+            commandInputsMap[choiceInput]()
+            puzzle:display()
+        else
+            local moveWasPossible = puzzle:move(choiceInput)
+            puzzle:display()
+            if not moveWasPossible then print ("Movement '" .. choiceInput .. "' is not valid. Try another!") end
+        end
+
+   end
 
     print('Congratulations - you solved the puzzle! Hooray!')
 end
 
 exitGame = function ()
     print('Concluding a single game...')
+end
+
+undoLastMove = function ()
+end
+
+quitPuzzle = function ()
+end
+
+local helpMsg = [[
+  Controls: Type a single character from 'wasd' or from
+            'ijkl' and then press <enter> to move a tile
+            that is adjacent to the 'empty tile'.
+            Also, 'up', 'down', 'left', and 'right' may
+            be entered to move as well.
+
+  Additional commands:
+            'quit' or 'q' -> Quit the current puzzle.
+            'undo' or 'x' -> Undo the last move made.
+            'help' or 'h' -> Display this help message.
+            'solve'       -> Reveal the solution to the puzzle.]]
+
+displayHelp = function ()
+    print(helpMsg)
+end
+
+solvePuzzle = function ()
+end
+
+sleep = function (desiredSeconds)
+    local elapsedCPUSeconds = os.clock()
+    while os.clock() - elapsedCPUSeconds < desiredSeconds do
+        -- absolutely nothing
+    end
 end
 
 run()
