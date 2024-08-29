@@ -24,13 +24,18 @@ local undoLastMove
 local quitPuzzle
 local displayHelp
 local solvePuzzle
+local displayMoveCount
+local resetPuzzle
+
 local sleep
 
 initLegalInputs = function ()
     local legalInputs = {}
-    commandInputsMap  = {['undo'] = undoLastMove, ['x'] = undoLastMove,
-                         ['quit'] = quitPuzzle,   ['q'] = quitPuzzle,
-                         ['help'] = displayHelp,  ['h'] = displayHelp,
+    commandInputsMap  = {['undo'] = undoLastMove,      ['x'] = undoLastMove,
+                         ['quit'] = quitPuzzle,        ['q'] = quitPuzzle,
+                         ['help'] = displayHelp,       ['h'] = displayHelp,
+                         ['moves'] = displayMoveCount, ['m'] = displayMoveCount,
+                         ['reset'] = resetPuzzle,      ['z'] = resetPuzzle,
                          ['solve'] = solvePuzzle}
 
     for k, _ in pairs(TileGrid.movementInputMap) do
@@ -70,7 +75,7 @@ initInputGetters = function (legalInputs)
                                                         msgInvalidChoice)
 
     local msgMovement = "\nIn which direction should a tile be slid?\n" ..
-                        "\n>> Type a single character from 'WASD' or 'IJKL'" ..
+                        "\n>> Type a single character from 'wasd' or 'ijkl'" ..
                         "\n>> and then press <enter>. Alternatively, type" ..
                         "\n>> 'help' for additional options.\n"
     getChoiceInput = InputGetter.generateInputGetter(msgMovement, 'Choice: ',
@@ -182,10 +187,11 @@ local helpMsg = [[
             be entered to move as well.
 
   Additional commands:
-            'quit' or 'q' -> Quit the current puzzle.
-            'undo' or 'x' -> Undo the last move made.
-            'help' or 'h' -> Display this help message.
-            'solve'       -> Reveal the solution to the puzzle.
+            'quit'  or 'q' -> Quit the current puzzle.
+            'undo'  or 'x' -> Undo the last move made.
+            'help'  or 'h' -> Display this help message.
+            'moves' or 'm' -> Display the number of moves made.
+            'solve'        -> Reveal the solution to the puzzle.
 ]]
 
 displayHelp = function ()
@@ -193,6 +199,13 @@ displayHelp = function ()
 end
 
 solvePuzzle = function ()
+end
+
+displayMoveCount = function(_, playerMoveCount)
+    print('# of moves made by player: ' .. playerMoveCount .. '\n')
+end
+
+resetPuzzle = function()
 end
 
 sleep = function (desiredSeconds)
