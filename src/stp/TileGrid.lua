@@ -11,6 +11,33 @@ local pop = function (tbl)
     end
 end
 
+-- This table copier makes no attempt at all to detect reference loops, and that
+-- is by design, as reference loops cannot occur in this particular usage.
+-- Also, while the duped table's metatable is set to the original's metatable,
+-- the metatable itself is not copied in any way. Nothing special is done regarding
+-- functions, userdata, or thread value types either, so beware if used elsewhere.
+--
+-- Also, the function does need to be forward-declared in the manner seen below in
+-- order for the recursive invokation of itself to work.
+local deepCopyTableRecursively
+deepCopyTableRecursively = function (tbl)
+    local dupedTbl = {}
+
+    for k, v in pairs(tbl) do
+        if type(v) == 'table' then
+            local subTbl = deepCopyTableRecursively(v)
+            dupedTbl[k] = subTbl
+        else
+            dupedTbl[k] = v
+        end
+    end
+
+    local originalsMetatable = getmetatable(tbl)
+    setmetatable(dupedTbl, originalsMetatable)
+
+    return dupedTbl
+end
+
 -- Wrapping the value of these constants in tables allows the references
 -- to be used for comparison instead of the value, which will lead to
 -- constant duplication when checking equality (for example, the four '_UP's
@@ -72,6 +99,10 @@ function TileGrid.new(numberOfRows, numberOfColumns, toroidalGeometry, displaySt
     newTileGrid:_initTileValues()
 
     return newTileGrid
+end
+
+function TileGrid:deepCopy()
+    return deepCopyTableRecursively(self)
 end
 
 -- Both the ASCII and BoxChar styles are initialized here, since regardless of

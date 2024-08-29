@@ -49,6 +49,11 @@ initLegalInputs = function ()
     return legalInputs
 end
 
+-- These functions could obviously just be define/set outside of this init function,
+-- at the top level of the program, but putting them here centralizes where they are,
+-- and conveniently has all possible methods of user input in one place. I'm also awaare
+-- this could be optimized further (some of the y/n inputs are quite redundant), but it's
+-- simply not needed for such a trivial program.
 initInputGetters = function (legalInputs)
     local msgInvalidChoice = 'Invalid choice - please try again!'
 
@@ -85,6 +90,12 @@ initInputGetters = function (legalInputs)
     getQuitConfirmation = InputGetter.generateInputGetter("Are you sure you want to give up on the current puzzle?" ..
                                                           "\nPlease enter 'yes' or 'no' (y/n).",
                                                           'Quiz puzzle?: ',
+                                                          InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
+                                                          msgInvalidChoice)
+
+    getResetConfirmation = InputGetter.generateInputGetter("Are you sure you want to reset the current puzzle to its original state?" ..
+                                                          "\nPlease enter 'yes' or 'no' (y/n).",
+                                                          'Reset puzzle?: ',
                                                           InputGetter.generateInputValidator('string', {'yes', 'no', 'y', 'n'}),
                                                           msgInvalidChoice)
 
@@ -132,16 +143,26 @@ end
 -- f: (TileGrid) -> ()
 gameLoop = function (puzzle)
     disorder(puzzle)
-    puzzle:display()
+    local puzzleCopyForReset = puzzle:deepCopy()
     local playerMoveCount = 0
+
+    puzzle:display()
 
     while (not puzzle:isInWinState()) do
         local choiceInput = getChoiceInput()
 
         if commandInputsMap[choiceInput] then
             local commandResult, extraData = commandInputsMap[choiceInput](puzzle, playerMoveCount)
-            if commandResult == '_QUIT' then return
-            elseif commandResult == '_UNDO_SUCCESSFUL' then playerMoveCount = extraData end
+
+            if commandResult == '_QUIT' then
+                return
+            elseif commandResult == '_UNDO_SUCCESSFUL' then
+                playerMoveCount = extraData
+            elseif commandResult == '_RESET' then
+                puzzle = puzzleCopyForReset:deepCopy()
+                playerMoveCount = 0
+            end
+
             puzzle:display()
         else
             local moveWasPossible = puzzle:move(choiceInput)
@@ -206,6 +227,14 @@ displayMoveCount = function(_, playerMoveCount)
 end
 
 resetPuzzle = function()
+    local choice = getResetConfirmation()
+
+    if choice == 'yes' or choice == 'y' then
+        print('Now resetting the current puzzle to its original state...\n')
+        return '_RESET'
+    end
+
+    print('Reset aborted. Resuming the current puzzle...\n')
 end
 
 sleep = function (desiredSeconds)
