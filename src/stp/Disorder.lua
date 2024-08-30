@@ -3,17 +3,18 @@ if not TileGrid then TileGrid = require 'stp/TileGrid' end
 local moveMap = {'up', 'down', 'left', 'right'}
 local oppositesMap = {up = 'down', down = 'up', left = 'right', right = 'left'}
 
+-- 'Forward-declaration' of functions to avoid reference errors in definitions.
 local disorder
 local calculateNumberOfSlides
 
--- @tileGrid: The TileGrid to disorder.
--- @numberOfSlides: The number of swaps between the blank tile and a random adjacent tile.
--- @noImmediateUndos: During the course or random disordering, sequential steps will never
---                    undo the previous step.
--- @ignoreIllegal: If a potential move is illegal, do not count it is a legitimate move, and
---                 thus do not increment until a valid move is generated.
+--          @tileGrid: The TileGrid to disorder.
+--    @numberOfSlides: The number of swaps between the blank tile and a random adjacent tile.
+--  @noImmediateUndos: During the course or random disordering, sequential steps will never
+--                       undo the previous step.
+--     @ignoreIllegal: If a potential move is illegal, do not count it as a legitimate move, and
+--                       thus do not increment until a valid move is generated.
 -- @disorderThreshold: TBI - A measure of the 'disorderer-ness' that must be reached until
---                     disordering halts.
+--                       disordering halts.
 --
 disorder = function (tileGrid, numberOfSlides, noImmediateUndos, ignoreIllegal, disorderThreshold)
     if type(tileGrid) == 'nil' then tileGrid = TileGrid.new() end
@@ -47,7 +48,7 @@ end
 
 -- The logic behind the specific number of slides/swaps calculated here is that
 -- (rowCount + columnCount - 2) represents that maximum Manhattan distance between the two
--- furthest tiles on the grid, so if this quantity allows enough swaps to occur
+-- furthest tiles on the grid, so this quantity allows enough swaps to occur
 -- that each tile could theoretically get to its furthest possible location. Now,
 -- that won't happen unless each tile is 'focused on', and many tiles will have
 -- maximum distances that are shorter due to combinatoric reasons beyond scop here,

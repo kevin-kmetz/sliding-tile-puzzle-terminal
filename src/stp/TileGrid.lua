@@ -45,11 +45,15 @@ end
 -- Instead, they all point to the single table. Maybe its not important here
 -- because there aren't that many uses of them, but a string itself is no better..
 --
+-- [UPDATE] I've since learned that Lua handles strings in an intelligent manner that
+-- makes what I did here with wrapping unnecessary. I ackowledge it, but I don't consider
+-- it worthwhile to undo, since there is no benefit derived from it for me at the moment.
+--
 _UP, _DOWN, _LEFT, _RIGHT = {move = 'up'}, {move = 'down'}, {move = 'left'}, {move = 'right'}
 
 -- WASD, IJKL, and 'up', 'down', 'left', and 'right' are supported as input strings.
 -- This unfortunately leads to conflicts in the use of the 'd' and 'l' chars, which
--- I have defaulted to giving WASD and IJKL precedence over the initialism.
+-- I have defaulted to giving WASD and IJKL precedence over the initialisms.
 --
 TileGrid.movementInputMap = {up = _UP, u = _UP, U = _UP, w = _UP, i = _UP, [_UP] = _UP,
                              down = _DOWN, D = _DOWN, s = _DOWN, k = _DOWN, [_DOWN] = _DOWN,
@@ -107,7 +111,9 @@ end
 
 -- Both the ASCII and BoxChar styles are initialized here, since regardless of
 -- which was passed into the constructor as the chosen style, both should be
--- available to the player at all times.
+-- available to the player at all times, even if one isn't actively used or even
+-- settable in-game.
+--
 function TileGrid:_initDisplayStyles()
     self.display = self._displayStyle == '_ASCII' and self.displayASCII or (self._displayStyle == '_BOXCHAR' and self.displayBoxChar)
 
@@ -237,8 +243,8 @@ end
 function TileGrid:isInWinState()
     -- Rather than doing a strictly sequential verification, all of these checks
     -- guarantee the elements are in order, even if not all values are checked.
-    -- For example, first elements of rows aren't check against last elements
-    -- of the previous row. It doesn't matter, however, because of the initial
+    -- For example, first elements of rows aren't checked against the last elements
+    -- of the previous rows. It doesn't matter, however, because of the initial
     -- checks and the sequential guarantee of the +1.
     local rowCount = self.rowCount
     local columnCount = self.columnCount

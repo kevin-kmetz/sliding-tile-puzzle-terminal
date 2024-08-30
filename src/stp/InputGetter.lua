@@ -9,7 +9,7 @@ local isIn = function (element, list)
 end
 
 InputGetter.generateInputGetter = function (solicitMessage, inputPrompt,
-                                validationLambda, validationErrorMessage)
+                                            validationLambda, validationErrorMessage)
 
     return function ()
         local input
@@ -30,7 +30,6 @@ InputGetter.generateInputGetter = function (solicitMessage, inputPrompt,
 
         return input
     end
-
 end
 
 InputGetter.generateInputValidator = function (requiredType, validList, extraCriteriaLambda)
